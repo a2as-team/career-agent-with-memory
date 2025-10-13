@@ -12,9 +12,6 @@ from google.api_core import exceptions
 
 app_name = 'career_agent'
 
-# Retrieve env variables for project and location
-project = os.environ.get("GOOGLE_CLOUD_PROJECT")
-location = os.environ.get("GOOGLE_CLOUD_LOCATION")
 # Retrieve the agent engine ID needed for the memory service
 agent_engine_id = os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID")
 
