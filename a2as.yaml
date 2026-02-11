@@ -1,0 +1,101 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: rseroter/career-agent-with-memory
+    source: https://github.com/rseroter/career-agent-with-memory
+    branch: main
+    commit: "9b1872d9"
+    scope: [career_agent_memory/agent.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:53:49Z'
+    url: https://a2as.org/certified/agents/rseroter/career-agent-with-memory
+  signatures:
+    digest: sha256:ctnaTR3wvBESBROUbSto1fMwWaXWEl-KxtYykCD6LN4
+    key: ed25519:VkpNy8InRnY-QCWnhOB6ATgz_pKFZ4HZkb_MTfns5ZY
+    sig: ed25519:9MeeIpw793YsScJmJ2Va_Bc3LvJ4B1bH53MP1owu9p45LNIAOwpSlfYP3cq2WpPCB8fJGiFe8yWtQsS-KPjyBg
+
+agents:
+  career_search_agent_memory:
+    type: instance
+    models: [gemini-2.5-flash]
+    tools: [google_search]
+    params:
+      name: career_search_agent_memory
+      description: Agent answers questions career options for a given city or country
+      instruction: [You are an agent that helps people figure out what types of jobs they should consider based on where they
+          want to live.]
+  root_agent:
+    type: instance
+    models: [gemini-2.5-pro]
+    tools: [adk.tools.preload_memory_tool.PreloadMemoryTool, agent_tool]
+    params:
+      name: career_advisor_agent_memory
+      description: Agent to help someone come up with a career plan
+      instruction: ['**Persona:** You are a helpful and knowledgeable career advisor.', '**Goal:** Your primary goal is to
+          provide personalized career recommendations to users based on their skills, interests, and desired geographical
+          location.', '**Workflow:**', '1.  **Information Gathering:** Your first step is to interact with the user to gather
+          essential information. You must ask about:', '*   Their skills and areas of expertise.', '*   Their interests and
+          passions.', '*   The city or country where they want to work.', '2.  **Tool Utilization:** Once you have identified
+          a potential career and a specific geographical location from the user, you **must** use the `career_search_agent_memory`
+          tool to find up-to-date information about job prospects.', '3.  **Synthesize and Respond:** After obtaining the
+          information from the `career_search_agent_memory` tool, you will combine that with the user''s stated skills and
+          interests to provide a comprehensive and helpful career plan.', '**Important:** Do not try to answer questions about
+          career options in a specific city or country from your own knowledge. Always use the `career_search_agent_memory`
+          tool for such queries to ensure the information is current and accurate.']
+      after_agent_callback: auto_save_session_to_memory_callback
+
+models:
+  gemini-2.5-flash:
+    type: literal
+    agents: [career_search_agent_memory]
+  gemini-2.5-pro:
+    type: literal
+    agents: [root_agent]
+
+tools:
+  agent_tool:
+    type: agent
+    agents: [root_agent]
+    params:
+      wrapper: AgentTool
+  google_search:
+    type: module
+    agents: [career_search_agent_memory]
+
+imports:
+  adk: google.adk
+  agent: agent
+  Agent: google.adk.agents.Agent
+  agent_tool: google.adk.tools.agent_tool
+  exceptions: google.api_core.exceptions
+  google_search: google.adk.tools.google_search
+  os: os
+  Runner: google.adk.runners.Runner
+  sys: sys
+  VertexAiMemoryBankService: google.adk.memory.VertexAiMemoryBankService
+  VertexAiSessionService: google.adk.sessions.VertexAiSessionService
+
+functions:
+  auto_save_session_to_memory_callback:
+    type: async
+    module: career_agent_memory.agent
+    args: [callback_context]
+
+variables:
+  GOOGLE_CLOUD_AGENT_ENGINE_ID:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [career_agent_memory.agent]
+  GOOGLE_CLOUD_LOCATION:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [career_agent_memory.agent]
+  GOOGLE_CLOUD_PROJECT:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [career_agent_memory.agent]
